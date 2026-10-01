@@ -1,0 +1,1 @@
+"""Community backend application package."""

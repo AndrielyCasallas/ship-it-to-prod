@@ -15,8 +15,6 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ghcr.io/${{ github.repository_owner }}/community-backend
-  FRONTEND_IMAGE: ghcr.io/${{ github.repository_owner }}/community-frontend
 
 jobs:
   backend-tests:
@@ -89,6 +87,13 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Normalize image names
+        id: image-names
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          echo "backend=ghcr.io/${owner}/community-backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=ghcr.io/${owner}/community-frontend" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         if: github.event_name == 'push'
@@ -105,8 +110,8 @@ jobs:
           file: ./backend/Dockerfile
           push: ${{ github.event_name == 'push' }}
           tags: |
-            ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
-            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ steps.image-names.outputs.backend }}:sha-${{ github.sha }}
+            ${{ steps.image-names.outputs.backend }}:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
@@ -120,7 +125,7 @@ jobs:
             NEXT_PUBLIC_API_URL=
             NEXT_PUBLIC_API_KEY=local-community-api-key-change-me
           tags: |
-            ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
-            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ steps.image-names.outputs.frontend }}:sha-${{ github.sha }}
+            ${{ steps.image-names.outputs.frontend }}:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend

@@ -46,6 +46,7 @@ jobs:
   frontend-build:
     name: Frontend build
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout
@@ -70,8 +71,13 @@ jobs:
       - name: Build Next.js application
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_URL: ""
-          NEXT_PUBLIC_API_KEY: local-community-api-key-change-me
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_KEY: ${{ secrets.API_KEY }}
+          NEXT_PUBLIC_WHATSAPP_URL: ${{ vars.NEXT_PUBLIC_WHATSAPP_URL }}
+          NEXT_PUBLIC_INSTAGRAM_URL: ${{ vars.NEXT_PUBLIC_INSTAGRAM_URL }}
+          NEXT_PUBLIC_MEETUP_URL: ${{ vars.NEXT_PUBLIC_MEETUP_URL }}
+          NEXT_PUBLIC_TELEGRAM_URL: ${{ vars.NEXT_PUBLIC_TELEGRAM_URL }}
+          NEXT_PUBLIC_LINKEDIN_URL: ${{ vars.NEXT_PUBLIC_LINKEDIN_URL }}
         run: pnpm build
 
   docker-images:
@@ -80,6 +86,7 @@ jobs:
       - backend-tests
       - frontend-build
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout
@@ -122,8 +129,13 @@ jobs:
           file: ./frontend/Dockerfile
           push: ${{ github.event_name == 'push' }}
           build-args: |
-            NEXT_PUBLIC_API_URL=
-            NEXT_PUBLIC_API_KEY=local-community-api-key-change-me
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_API_KEY=${{ secrets.API_KEY }}
+            NEXT_PUBLIC_WHATSAPP_URL=${{ vars.NEXT_PUBLIC_WHATSAPP_URL }}
+            NEXT_PUBLIC_INSTAGRAM_URL=${{ vars.NEXT_PUBLIC_INSTAGRAM_URL }}
+            NEXT_PUBLIC_MEETUP_URL=${{ vars.NEXT_PUBLIC_MEETUP_URL }}
+            NEXT_PUBLIC_TELEGRAM_URL=${{ vars.NEXT_PUBLIC_TELEGRAM_URL }}
+            NEXT_PUBLIC_LINKEDIN_URL=${{ vars.NEXT_PUBLIC_LINKEDIN_URL }}
           tags: |
             ${{ steps.image-names.outputs.frontend }}:sha-${{ github.sha }}
             ${{ steps.image-names.outputs.frontend }}:latest
@@ -176,8 +188,13 @@ jobs:
           API_PORT=8000
           API_KEY=${API_KEY}
           CORS_ORIGINS=http://localhost:3000
-          NEXT_PUBLIC_API_URL=
-          NEXT_PUBLIC_API_KEY=${API_KEY}
+          NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_KEY=${{ secrets.API_KEY }}
+          NEXT_PUBLIC_WHATSAPP_URL=${{ vars.NEXT_PUBLIC_WHATSAPP_URL }}
+          NEXT_PUBLIC_INSTAGRAM_URL=${{ vars.NEXT_PUBLIC_INSTAGRAM_URL }}
+          NEXT_PUBLIC_MEETUP_URL=${{ vars.NEXT_PUBLIC_MEETUP_URL }}
+          NEXT_PUBLIC_TELEGRAM_URL=${{ vars.NEXT_PUBLIC_TELEGRAM_URL }}
+          NEXT_PUBLIC_LINKEDIN_URL=${{ vars.NEXT_PUBLIC_LINKEDIN_URL }}
           BACKEND_IMAGE=${{ steps.image-names.outputs.backend }}:latest
           FRONTEND_IMAGE=${{ steps.image-names.outputs.frontend }}:latest
           EOF

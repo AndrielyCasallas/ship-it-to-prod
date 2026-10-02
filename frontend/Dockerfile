@@ -42,7 +42,7 @@ WORKDIR /app
 # ARGs recibidos en build-time para quemar (bake) las variables NEXT_PUBLIC_* en el cliente JS.
 # Valores por defecto alineados a la arquitectura de Reverse Proxy / API Key.
 ARG NEXT_PUBLIC_API_URL=
-ARG NEXT_PUBLIC_API_KEY=aws-builder-secret-key-2026
+ARG NEXT_PUBLIC_API_KEY=local-community-api-key-change-me
 
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_KEY=$NEXT_PUBLIC_API_KEY

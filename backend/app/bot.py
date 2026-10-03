@@ -429,18 +429,6 @@ async def run_bot() -> None:
                 BotCommand("start", "Mostrar bienvenida y ayuda"),
                 BotCommand("registrar", "Registrar nombre y apellido"),
                 BotCommand("eventos", "Listar eventos disponibles"),
-                BotCommand("crear_evento", "Crear un evento (admin)"),
-                BotCommand("hacer_admin", "Promover usuario a admin"),
-                BotCommand("speakers", "Ver speakers (admin)"),
-                BotCommand("proyectos", "Listar proyectos (admin)"),
-                BotCommand("propuestas", "Ver propuestas recibidas (admin)"),
-                BotCommand("crear_proyecto", "Crear proyecto (admin)"),
-                BotCommand("editar_proyecto", "Editar proyecto (admin)"),
-                BotCommand("eliminar_proyecto", "Eliminar proyecto (admin)"),
-                BotCommand("core_team", "Listar core team (admin)"),
-                BotCommand("agregar_core", "Agregar core team (admin)"),
-                BotCommand("editar_core", "Editar core team (admin)"),
-                BotCommand("eliminar_core", "Eliminar core team (admin)"),
             ]
         )
         await application.start()

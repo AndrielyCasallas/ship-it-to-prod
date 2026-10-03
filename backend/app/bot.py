@@ -37,6 +37,7 @@ Handler = Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[None]]
 
 
 def sender_identity(update: Update) -> tuple[int, str | None, str]:
+    """Extrae el identificador, usuario y nombre del remitente de Telegram."""
     user = update.effective_user
     if user is None:
         raise ValueError("No se pudo identificar al usuario de Telegram")
@@ -44,12 +45,14 @@ def sender_identity(update: Update) -> tuple[int, str | None, str]:
 
 
 async def is_admin(telegram_id: int) -> bool:
+    """Comprueba si el usuario es superusuario o tiene rol administrativo."""
     return telegram_id == settings.superuser_telegram_id or (
         await get_user_role(telegram_id)
     ) in {"admin", "superuser"}
 
 
 async def require_admin(update: Update) -> int | None:
+    """Verifica permisos administrativos y notifica el motivo si se deniegan."""
     if not update.message:
         return None
     try:
@@ -64,6 +67,7 @@ async def require_admin(update: Update) -> int | None:
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Responde al comando inicial con las instrucciones principales del bot."""
     if update.message:
         await update.message.reply_text(
             "Bienvenido. Usa /registrar Nombre Apellido para registrarte y ver tu nombre en la web oficial\n\n"
@@ -72,6 +76,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Registra al usuario como asistente usando el nombre recibido."""
     if not update.message:
         return
     try:
@@ -97,6 +102,7 @@ async def register_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def events_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Muestra al usuario los eventos disponibles y sus fechas."""
     if not update.message:
         return
     events = await list_events()
@@ -115,6 +121,7 @@ async def events_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def create_event_command(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
+    """Crea un evento desde el formato de texto usado por el comando."""
     if not update.message:
         return
     try:
@@ -154,6 +161,7 @@ async def create_event_command(
 async def make_admin_command(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
+    """Promueve a administrador a otro usuario, solo desde el superusuario."""
     if not update.message:
         return
     try:
@@ -180,6 +188,7 @@ async def make_admin_command(
 
 
 async def speakers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lista los speakers registrados para los administradores."""
     if await require_admin(update) is None or not update.message:
         return
     speakers = await list_speakers()
@@ -196,6 +205,7 @@ async def speakers_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 
 async def projects_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Muestra una página de proyectos para consulta administrativa."""
     if await require_admin(update) is None or not update.message:
         return
     try:
@@ -222,6 +232,7 @@ async def projects_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def project_proposals_command(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
+    """Muestra las propuestas de proyectos pendientes de revisión."""
     if await require_admin(update) is None or not update.message:
         return
     proposals = await list_project_proposals()
@@ -239,6 +250,7 @@ async def project_proposals_command(
 
 
 async def create_project_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Crea un proyecto a partir de sus campos separados por barras verticales."""
     if await require_admin(update) is None or not update.message:
         return
     parts = [part.strip() for part in " ".join(context.args).split("|",  maxsplit=5)]
@@ -252,6 +264,7 @@ async def create_project_command(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def edit_project_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Edita un proyecto aplicando los campos enviados por un administrador."""
     if await require_admin(update) is None or not update.message:
         return
     parts = [part.strip() for part in " ".join(context.args).split("|", maxsplit=6)]
@@ -273,6 +286,7 @@ async def edit_project_command(update: Update, context: ContextTypes.DEFAULT_TYP
 
 
 async def delete_project_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Elimina el proyecto identificado en el comando."""
     if await require_admin(update) is None or not update.message:
         return
     if len(context.args) != 1 or not context.args[0].isdigit():
@@ -283,6 +297,7 @@ async def delete_project_command(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def core_team_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lista los integrantes actuales del equipo principal."""
     if await require_admin(update) is None or not update.message:
         return
     members = await list_core_team()
@@ -297,6 +312,7 @@ async def core_team_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def create_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Añade un integrante del equipo con sus redes sociales opcionales."""
     if await require_admin(update) is None or not update.message:
         return
     parts = [part.strip() for part in " ".join(context.args).split("|", maxsplit=5)]
@@ -317,6 +333,7 @@ async def create_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 async def edit_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Actualiza un integrante del equipo con los campos proporcionados."""
     if await require_admin(update) is None or not update.message:
         return
     parts = [part.strip() for part in " ".join(context.args).split("|", maxsplit=6)]
@@ -337,6 +354,7 @@ async def edit_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
 
 async def delete_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Elimina un integrante del equipo por su identificador."""
     if await require_admin(update) is None or not update.message:
         return
     if len(context.args) != 1 or not context.args[0].isdigit():
@@ -349,6 +367,7 @@ async def delete_core_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def telegram_error_handler(
     update: object, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
+    """Registra errores del bot y evita que una actualización lo detenga."""
     error = context.error
     if isinstance(error, TimedOut):
         logger.warning(
@@ -359,6 +378,7 @@ async def telegram_error_handler(
 
 
 async def run_bot() -> None:
+    """Construye el bot, registra comandos y mantiene el polling activo."""
     if not settings.bot_token:
         logger.warning("BOT_TOKEN no configurado; el bot no se iniciará.")
         return
@@ -442,3 +462,11 @@ async def run_bot() -> None:
             await application.stop()
         if initialized:
             await application.shutdown()
+
+
+# Ejemplo independiente para practicar: responde al comando /hola.
+async def hello_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Saluda a la persona que ejecuta el comando."""
+    if update.message:
+        user_name = update.effective_user.first_name if update.effective_user else "amigo"
+        await update.message.reply_text(f"¡Hola, {user_name}! 👋")

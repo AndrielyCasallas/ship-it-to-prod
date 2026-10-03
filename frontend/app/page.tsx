@@ -43,12 +43,14 @@ const apiHeaders = {
 }
 
 async function getJson<T>(path: string): Promise<T> {
+  /** Consulta un endpoint JSON protegido y devuelve su respuesta tipada. */
   const response = await fetch(`${API_URL}${path}`, { cache: 'no-store', headers: apiHeaders })
   if (!response.ok) throw new Error(`API ${response.status}`)
   return response.json()
 }
 
 async function postJson<T>(path: string, body: T) {
+  /** Envía un formulario JSON al backend y propaga los errores HTTP. */
   const response = await fetch(`${API_URL}${path}`, { method: 'POST', headers: { ...apiHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   if (!response.ok) throw new Error(`API ${response.status}`)
   return response.json().catch(() => null)
@@ -57,6 +59,7 @@ async function postJson<T>(path: string, body: T) {
 type DateParts = { year: number; month: number; day: number }
 
 function parseDateParts(value: string): DateParts | null {
+  /** Extrae año, mes y día de una fecha ISO sin depender de la zona horaria. */
   const date = value.trim()
   const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})/)
   if (isoMatch) return { year: Number(isoMatch[1]), month: Number(isoMatch[2]), day: Number(isoMatch[3]) }
@@ -64,6 +67,7 @@ function parseDateParts(value: string): DateParts | null {
 }
 
 function formatDate(date: string) {
+  /** Convierte una fecha ISO en el formato corto usado por la interfaz. */
   const parts = parseDateParts(date)
   if (!parts) return 'Fecha no disponible'
   const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
@@ -71,13 +75,16 @@ function formatDate(date: string) {
 }
 
 function AppMark() {
+  /** Renderiza la marca visual compacta de la comunidad. */
   return <div className="app-mark" aria-label="AWS Students Builder Group"><span>AWS</span><i /></div>
 }
 
 function Countdown({ date }: { date: string }) {
+  /** Muestra una cuenta regresiva reactiva hasta el próximo evento. */
   const [now, setNow] = useState<number | null>(null)
 
   useEffect(() => {
+    /** Actualiza el reloj cada segundo y limpia el intervalo al desmontar. */
     const updateNow = () => setNow(Date.now())
     updateNow()
     const timer = window.setInterval(updateNow, 1000)
@@ -102,14 +109,18 @@ function Countdown({ date }: { date: string }) {
   return <div className="countdown" aria-label={countdownLabel}><div><b>{String(days).padStart(2, '0')}</b><small>DÍAS</small></div><span>:</span><div><b>{String(hours).padStart(2, '0')}</b><small>HRS</small></div><span>:</span><div><b>{String(mins).padStart(2, '0')}</b><small>MIN</small></div><span>:</span><div><b>{String(secs).padStart(2, '0')}</b><small>SEC</small></div></div>
 }
 
+/** Renderiza el identificador numerado de cada sección de contenido. */
 function SectionLabel({ children, number }: { children: React.ReactNode; number: string }) { return <div className="section-label"><span>{number}</span><span>{children}</span></div> }
 
 function CommunityForm({ kind, title, description }: { kind: 'project' | 'speaker'; title: string; description: string }) {
+  /** Gestiona y envía los formularios de proyectos y speakers. */
   const isProject = kind === 'project'
   const [values, setValues] = useState<ProjectForm | SpeakerForm>(isProject ? { name: '', manager: '', contact_phone: '', contact_email: '', description: '' } : { name: '', company: '', job_title: '', email: '', phone: '' })
   const [state, setState] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
   const update = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
+  /** Actualiza de forma inmutable el campo editado del formulario. */
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    /** Valida, envía y reinicia el formulario mostrando su estado al usuario. */
     event.preventDefault()
     if (!values.name.trim() || (isProject && (!(values as ProjectForm).manager.trim() || !(values as ProjectForm).description.trim()))) return
     setState('sending')
@@ -119,6 +130,7 @@ function CommunityForm({ kind, title, description }: { kind: 'project' | 'speake
 }
 
 export default function Page() {
+  /** Renderiza la página principal y sincroniza sus datos con la API. */
   const [menuOpen, setMenuOpen] = useState(false)
   const [events, setEvents] = useState<ApiEvent[]>([])
   const [attendees, setAttendees] = useState<Attendee[]>([])
@@ -130,7 +142,9 @@ export default function Page() {
   const [apiError, setApiError] = useState(false)
 
   useEffect(() => {
+    /** Carga el estado inicial y actualiza periódicamente la lista de asistentes. */
     const loadInitialData = async () => {
+      /** Obtiene en paralelo todos los datos necesarios para la página. */
       setLoading(true)
       try {
         const [nextEvents, nextAttendees, nextHealth, nextProjects, nextTeam, completed] = await Promise.all([
@@ -151,6 +165,7 @@ export default function Page() {
       } catch { setApiError(true) } finally { setLoading(false) }
     }
     const refreshAttendees = async () => {
+      /** Refresca únicamente los asistentes para reflejar nuevos registros. */
       try {
         setAttendees(await getJson<Attendee[]>('/api/attendees'))
         setApiError(false)
@@ -164,6 +179,7 @@ export default function Page() {
   }, [])
 
   useEffect(() => {
+    /** Actualiza las coordenadas usadas por el efecto visual del cursor. */
     const move = (event: MouseEvent) => { document.documentElement.style.setProperty('--mouse-x', `${event.clientX}px`); document.documentElement.style.setProperty('--mouse-y', `${event.clientY}px`) }
     window.addEventListener('pointermove', move); return () => window.removeEventListener('pointermove', move)
   }, [])
@@ -186,7 +202,7 @@ export default function Page() {
 
       <section className="projects section container" id="projects"><SectionLabel number="03">PROYECTOS EN CURSO</SectionLabel><div className="section-heading"><h2>Ideas en <span>movimiento.</span></h2></div><div className="project-list">{projectsData.length ? projectsData.map((project, index) => <article className={`project-card ${['orange', 'violet', 'cyan'][index % 3]}`} key={project.id}><span className="project-number">{String(project.id).padStart(2, '0')}</span><div><span className="project-tag">{project.status}</span><h3>{project.title}</h3><p>{project.description}</p><small>{project.manager}</small></div><div className="project-links">{project.repository_url && <a href={project.repository_url} target="_blank" rel="noreferrer">Repositorio <ArrowUpRight size={15} /></a>}{project.landing_page_url && <a href={project.landing_page_url} target="_blank" rel="noreferrer">Landing <ArrowUpRight size={15} /></a>}</div></article>) : <p className="empty-state">{loading ? 'Cargando proyectos...' : apiError ? 'No se pudieron consultar los proyectos.' : 'No hay proyectos en curso registrados.'}</p>}</div></section>
 
-      <section className="live-data section container" id="live-data"><SectionLabel number="03B">DATOS EN TIEMPO REAL</SectionLabel><div className="live-grid"><div className="live-card"><div className="live-card-head"><h3>Próximos eventos</h3><span>{loading ? 'Cargando...' : `${events.length} publicados`}</span></div>{events.length ? events.slice(0, 3).map((event) => <div className="live-row" key={event.id}><CalendarDays size={16} /><div><b>{event.title}</b><small>{formatDate(event.event_date)} · {event.description}</small></div></div>) : <p className="empty-state">{apiError ? 'La API no está disponible. Los eventos aparecerán aquí al conectar el backend.' : 'Aún no hay eventos publicados.'}</p>}</div><div className="live-card"><div className="live-card-head"><h3>Builders registrados</h3><span>{loading ? 'Cargando...' : `${attendees.length} asistentes`}</span></div>{attendees.length ? attendees.slice(0, 4).map((attendee) => <div className="live-row" key={`${attendee.display_name}-${attendee.registered_at}`}><Users size={16} /><div><b>{attendee.display_name}</b><small>Registrado el {formatDate(attendee.registered_at.slice(0, 10))}</small></div></div>) : <p className="empty-state">{apiError ? 'Conecta la API para mostrar la lista de asistentes.' : 'Todavía no hay asistentes registrados.'}</p>}</div></div></section>
+      <section className="live-data section container" id="live-data"><SectionLabel number="03B">DATOS EN TIEMPO REAL</SectionLabel><div className="live-grid"><div className="live-card"><div className="live-card-head"><h3>Próximos eventos</h3><span>{loading ? 'Cargando...' : `${events.length} publicados`}</span></div>{events.length ? events.slice(0, 3).map((event) => <div className="live-row" key={event.id}><CalendarDays size={16} /><div><b>{event.title}</b><small>{formatDate(event.event_date)} · {event.description}</small></div></div>) : <p className="empty-state">{apiError ? 'La API no está disponible. Los eventos aparecerán aquí al conectar el backend.' : 'Aún no hay eventos publicados.'}</p>}</div><div className="live-card builder-card"><div className="live-card-head"><h3>Builders registrados</h3><span>{loading ? 'Cargando...' : `${attendees.length} asistentes`}</span></div>{attendees.length ? <div className="builder-list" aria-label="Todos los builders registrados">{attendees.map((attendee, index) => <div className="live-row builder-row" key={`${attendee.display_name}-${attendee.registered_at}`}><span className="builder-number">#{index + 1}</span><Users size={16} /><div><b>{attendee.display_name}</b><small>Registrado el {formatDate(attendee.registered_at.slice(0, 10))}</small></div></div>)}</div> : <p className="empty-state">{apiError ? 'Conecta la API para mostrar la lista de asistentes.' : 'Todavía no hay asistentes registrados.'}</p>}</div></div></section>
 
       <section className="calendar-section section" id="calendar"><div className="container"><SectionLabel number="04">PRÓXIMOS EVENTOS</SectionLabel><div className="section-heading"><h2>Poximos <span>eventos.</span></h2></div><div className="calendar-grid">{events.length ? events.map((event) => <div className="calendar-item" key={event.id}><span>{formatDate(event.event_date)}</span><b>{event.title}</b><small>{event.description}</small></div>) : <p className="empty-state">{loading ? 'Cargando agenda...' : apiError ? 'No se pudo consultar la agenda.' : 'No hay eventos próximos registrados.'}</p>}</div></div></section>
 

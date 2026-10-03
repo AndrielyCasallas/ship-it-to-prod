@@ -10,10 +10,16 @@ from .config import settings
 
 
 def empty_to_none(value: str | None) -> str | None:
+    """Convierte cadenas vacías o con espacios en ``None``."""
     return value.strip() or None if value is not None else None
 
 
 def normalize_event_date(value: str) -> str:
+    """Normaliza una fecha aceptando los formatos habituales de entrada.
+
+    Raises:
+        ValueError: Si el texto no representa una fecha válida.
+    """
     value = value.strip()
     for pattern in (
         "%Y-%m-%d",
@@ -103,9 +109,12 @@ CREATE TABLE IF NOT EXISTS core_team (
 
 @asynccontextmanager
 async def get_connection() -> AsyncIterator[aiosqlite.Connection]:
+    """Abre una conexión SQLite configurada y activa claves foráneas."""
     database_path = settings.database_path
     if not database_path.is_absolute():
         database_path = Path.cwd() / database_path
+        # Convertir a ruta definitiva a partir de donde se ejecuta el documento
+        
     database_path.parent.mkdir(parents=True, exist_ok=True)
     async with aiosqlite.connect(database_path) as connection:
         connection.row_factory = aiosqlite.Row
@@ -114,6 +123,7 @@ async def get_connection() -> AsyncIterator[aiosqlite.Connection]:
 
 
 async def init_db() -> None:
+    """Crea el esquema y corrige datos heredados antes de servir peticiones."""
     async with get_connection() as connection:
         await connection.executescript(SCHEMA)
         cursor = await connection.execute("SELECT id, event_date FROM events")
@@ -160,6 +170,7 @@ async def upsert_user(
     username: str | None,
     full_name: str,
 ) -> None:
+    """Crea o actualiza el perfil de un usuario de Telegram."""
     now = datetime.now(timezone.utc).isoformat()
     async with get_connection() as connection:
         await connection.execute(
@@ -176,6 +187,7 @@ async def upsert_user(
 
 
 async def get_user_role(telegram_id: int) -> str | None:
+    """Obtiene el rol persistido de un usuario, si ya está registrado."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             "SELECT role FROM users WHERE telegram_id = ?", (telegram_id,)
@@ -189,6 +201,7 @@ async def register_attendee(
     display_name: str,
     event_id: int | None = None,
 ) -> tuple[bool, aiosqlite.Row | None]:
+    """Registra un asistente una sola vez y devuelve su registro resultante."""
     now = datetime.now(timezone.utc).isoformat()
     async with get_connection() as connection:
         cursor = await connection.execute(
@@ -214,6 +227,7 @@ async def register_attendee(
 
 
 async def list_events() -> list[dict[str, Any]]:
+    """Lista todos los eventos ordenados cronológicamente."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -226,6 +240,7 @@ async def list_events() -> list[dict[str, Any]]:
 
 
 async def count_completed_events(until_date: str) -> int:
+    """Cuenta eventos cuya fecha es anterior o igual a la fecha indicada."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             "SELECT COUNT(*) AS total FROM events WHERE event_date <= ?",
@@ -236,6 +251,7 @@ async def count_completed_events(until_date: str) -> int:
 
 
 async def list_upcoming_events(from_date: str) -> list[dict[str, Any]]:
+    """Lista eventos posteriores a la fecha indicada."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -254,6 +270,7 @@ async def list_projects(
     page_size: int = 5,
     status: str | None = None,
 ) -> list[dict[str, Any]]:
+    """Obtiene una página de proyectos, opcionalmente filtrada por estado."""
     offset = (max(page, 1) - 1) * page_size
     async with get_connection() as connection:
         query = """
@@ -281,6 +298,7 @@ async def create_project(
     landing_page_url: str | None,
     status: str = "ongoing",
 ) -> int:
+    """Crea un proyecto y devuelve el identificador asignado por SQLite."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -297,6 +315,7 @@ async def create_project(
 
 
 async def update_project(project_id: int, fields: dict[str, Any]) -> bool:
+    """Actualiza únicamente campos permitidos y reporta si existía el proyecto."""
     allowed = {"title", "description", "manager", "repository_url", "landing_page_url", "status"}
     updates = {key: value for key, value in fields.items() if key in allowed}
     if "landing_page_url" in updates:
@@ -314,6 +333,7 @@ async def update_project(project_id: int, fields: dict[str, Any]) -> bool:
 
 
 async def delete_project(project_id: int) -> bool:
+    """Elimina un proyecto por ID e indica si se eliminó alguna fila."""
     async with get_connection() as connection:
         cursor = await connection.execute("DELETE FROM projects WHERE id = ?", (project_id,))
         await connection.commit()
@@ -324,6 +344,7 @@ async def create_project_proposal(
     name: str, manager: str, contact_phone: str | None,
     contact_email: str | None, description: str,
 ) -> int:
+    """Guarda una propuesta externa y devuelve su nuevo identificador."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -339,6 +360,7 @@ async def create_project_proposal(
 
 
 async def list_project_proposals() -> list[dict[str, Any]]:
+    """Lista las propuestas recibidas, comenzando por las más recientes."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -356,6 +378,7 @@ async def create_speaker(
     name: str, company: str | None, job_title: str | None,
     email: str | None, phone: str | None,
 ) -> int:
+    """Registra un speaker, normalizando sus datos opcionales."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -370,6 +393,7 @@ async def create_speaker(
 
 
 async def list_speakers() -> list[dict[str, Any]]:
+    """Lista los speakers registrados desde el más reciente."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             "SELECT id, name, company, job_title, email, phone, created_at FROM speakers ORDER BY id DESC"
@@ -379,6 +403,7 @@ async def list_speakers() -> list[dict[str, Any]]:
 
 
 async def list_core_team() -> list[dict[str, Any]]:
+    """Obtiene los integrantes del equipo ordenados por identificador."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             "SELECT id, name, role, instagram, linkedin, github FROM core_team ORDER BY id ASC"
@@ -391,6 +416,7 @@ async def create_core_member(
     telegram_id: int, name: str, role: str,
     instagram: str | None, linkedin: str | None, github: str | None,
 ) -> int:
+    """Crea un integrante del equipo y devuelve su identificador."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
@@ -407,6 +433,7 @@ async def create_core_member(
 
 
 async def update_core_member(member_id: int, fields: dict[str, Any]) -> bool:
+    """Actualiza campos permitidos de un integrante del equipo."""
     allowed = {"telegram_id", "name", "role", "instagram", "linkedin", "github"}
     updates = {key: value for key, value in fields.items() if key in allowed}
     for social_key in ("instagram", "linkedin", "github"):
@@ -425,6 +452,7 @@ async def update_core_member(member_id: int, fields: dict[str, Any]) -> bool:
 
 
 async def delete_core_member(member_id: int) -> bool:
+    """Elimina un integrante del equipo e indica si fue encontrado."""
     async with get_connection() as connection:
         cursor = await connection.execute("DELETE FROM core_team WHERE id = ?", (member_id,))
         await connection.commit()
@@ -437,6 +465,7 @@ async def create_event(
     description: str,
     created_by: int,
 ) -> int:
+    """Valida, normaliza y persiste un evento creado por un administrador."""
     normalized_date = normalize_event_date(event_date)
     async with get_connection() as connection:
         cursor = await connection.execute(
@@ -451,6 +480,7 @@ async def create_event(
 
 
 async def promote_to_admin(telegram_id: int) -> None:
+    """Eleva a administrador el usuario de Telegram indicado."""
     async with get_connection() as connection:
         await connection.execute(
             "UPDATE users SET role = 'admin' WHERE telegram_id = ?", (telegram_id,)
@@ -459,11 +489,12 @@ async def promote_to_admin(telegram_id: int) -> None:
 
 
 async def list_attendees() -> list[dict[str, str]]:
+    """Lista los asistentes más recientes primero para la web pública."""
     async with get_connection() as connection:
         cursor = await connection.execute(
             """
             SELECT display_name, registered_at
-            FROM attendees ORDER BY registered_at ASC, id ASC
+            FROM attendees ORDER BY registered_at DESC, id DESC
             """
         )
         rows = await cursor.fetchall()
@@ -471,6 +502,7 @@ async def list_attendees() -> list[dict[str, str]]:
 
 
 async def database_is_connected() -> bool:
+    """Comprueba que SQLite pueda abrirse y ejecutar una consulta sencilla."""
     try:
         async with get_connection() as connection:
             await connection.execute("SELECT 1")

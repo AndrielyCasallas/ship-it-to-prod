@@ -46,6 +46,7 @@ function Button({
   size = 'default',
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  /** Renderiza el botón base con variantes visuales y tamaños consistentes. */
   return (
     <ButtonPrimitive
       data-slot="button"

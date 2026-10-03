@@ -19,6 +19,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  /** Define la estructura HTML y los metadatos compartidos por toda la web. */
   return (
     <html lang="es">
       <body className="antialiased">

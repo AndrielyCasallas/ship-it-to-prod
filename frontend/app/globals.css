@@ -716,6 +716,41 @@ h2 span,
     min-height: 230px;
 }
 
+.builder-card {
+    min-height: 0;
+}
+
+.builder-list {
+    max-height: 288px;
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-color: var(--orange) rgba(255, 255, 255, .08);
+    scrollbar-width: thin;
+}
+
+.builder-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.builder-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, .08);
+}
+
+.builder-list::-webkit-scrollbar-thumb {
+    background: var(--orange);
+}
+
+.builder-row {
+    align-items: center;
+}
+
+.builder-number {
+    color: var(--orange);
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 22px;
+}
+
 .live-card-head {
     display: flex;
     align-items: center;

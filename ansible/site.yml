@@ -1,0 +1,29 @@
+---
+- name: Instalar Docker y desplegar observabilidad
+  hosts: all
+  become: false
+  gather_facts: false
+  vars:
+    observability_dir: /opt/observability
+  pre_tasks:
+    - name: Esperar a que SSH este disponible
+      ansible.builtin.raw: "true"
+      register: ssh_check
+      until: ssh_check.rc == 0
+      retries: 60
+      delay: 5
+
+    - name: Instalar Docker en Alpine
+      ansible.builtin.raw: apk add --no-cache docker docker-cli-compose
+      changed_when: false
+
+    - name: Habilitar Docker al arrancar
+      ansible.builtin.raw: rc-update add docker default
+      changed_when: false
+
+    - name: Iniciar Docker
+      ansible.builtin.raw: rc-service docker start
+      changed_when: false
+
+  roles:
+    - observability

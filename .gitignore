@@ -10,3 +10,24 @@ __pycache__/
 .DS_Store
 
 actions-runner/
+
+# Frontend and build artifacts
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+
+# Terraform local state and variable files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+terraform.tfvars.json
+**/terraform.tfvars
+**/terraform.tfvars.json
+
+# Local infrastructure credentials and inventories
+*.pem
+*.key
+ansible/inventory*.ini

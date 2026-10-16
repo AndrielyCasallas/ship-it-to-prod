@@ -1,0 +1,16 @@
+---
+- name: Crear directorio
+  ansible.builtin.raw: mkdir -p "{{ observability_dir }}"
+  changed_when: false
+
+- name: Publicar Docker Compose de observabilidad
+  ansible.builtin.raw: >-
+    printf '%s' '{{ lookup("template", role_path + "/templates/docker-compose.yml.j2")
+    | b64encode }}' | base64 -d > "{{ observability_dir }}/docker-compose.yml"
+  changed_when: false
+
+- name: Levantar stack de observabilidad
+  ansible.builtin.raw: >-
+    cd "{{ observability_dir }}" &&
+    docker compose -f docker-compose.yml up -d
+  changed_when: false
